@@ -19,15 +19,29 @@ import java.io.IOException;
 import java.util.Optional;
 
 public class Application extends javafx.application.Application {
+    // This line of code is creating a new TableView object that will display a list of contacts. The
+    // TableView is parameterized with the Contact class, which means that it will display a list of
+    // Contact objects. The TableView is then assigned to the private instance variable contactsTable.
     private TableView<Contact> contactsTable = new TableView<>();
+    // This line of code is creating an ObservableList of Contact objects called `contactsData` using
+    // the `FXCollections.observableArrayList()` method. The `ObservableList` is a type of list that
+    // allows listeners to track changes when elements are added, removed, or updated. This
+    // `ObservableList` will be used to store the data for the TableView that displays the list of
+    // contacts in the application.
     private ObservableList<Contact> contactsData = FXCollections.observableArrayList();
 
     public static void main(String[] args) {
         launch(args);
     }
 
+    /**
+     * This function sets up a GUI for a contacts app with a table of contacts and buttons to add,
+     * edit, and delete contacts.
+     * 
+     * @param primaryStage The main window of the application, which is an instance of the Stage class.
+     * It is the top-level container for all JavaFX content.
+     */
     public void start(Stage primaryStage) {
-        // Set up the TableView
         TableColumn<Contact, String> nameColumn = new TableColumn<>("Name");
         TableColumn<Contact, Integer> areaCodeColumn = new TableColumn<>("Area Code");
         TableColumn<Contact, Integer> telephonePrefixColumn = new TableColumn<>("Telephone Prefix");
@@ -45,7 +59,6 @@ public class Application extends javafx.application.Application {
         contactsTable.getColumns().addAll(nameColumn, areaCodeColumn, telephonePrefixColumn, lineNumberColumn, emailColumn, isMobileColumn);
         contactsTable.setItems(contactsData);
 
-        // Set up buttons and their event handlers
         Button addButton = new Button("Add");
         addButton.setOnAction(event -> addContact());
 
@@ -66,11 +79,14 @@ public class Application extends javafx.application.Application {
         primaryStage.setTitle("Contacts App");
         primaryStage.show();
 
-        // Load contacts from the CSV file
         File contactsFile = new File("contacts.csv");
         loadContacts(contactsFile);
     }
+    /**
+     * The function adds a new contact to a list and saves it to a CSV file.
+     */
     private void addContact() {
+        // This line of code creates a new Contact object with default values for the properties, the default values prevent a bug that occurs when users try to load a contact without all of the required variables.
         Contact newContact = new Contact(0,0,0,"","",false);
         if (showContactDialog(newContact)) {
             contactsData.add(newContact);
@@ -78,6 +94,9 @@ public class Application extends javafx.application.Application {
         }
     }
 
+    /**
+     * This function edits a selected contact and saves the changes to a CSV file.
+     */
     private void editContact() {
         Contact selectedContact = contactsTable.getSelectionModel().getSelectedItem();
         if (selectedContact != null) {
@@ -87,6 +106,9 @@ public class Application extends javafx.application.Application {
         }
     }
 
+    /**
+     * This function deletes a selected contact from a table and saves the updated list to a CSV file.
+     */
     private void deleteContact() {
         int selectedIndex = contactsTable.getSelectionModel().getSelectedIndex();
         if (selectedIndex >= 0) {
@@ -95,6 +117,11 @@ public class Application extends javafx.application.Application {
         }
     }
 
+    /**
+     * This function loads contact data from a file and creates Contact objects from the data.
+     * 
+     * @param file a File object representing the file containing contact information to be loaded
+     */
     private void loadContacts(File file) {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
@@ -117,9 +144,14 @@ public class Application extends javafx.application.Application {
         }
     }
 
+    /**
+     * This function saves contact data to a file in CSV format.
+     * 
+     * @param file The file parameter is the file object that represents the file where the contacts
+     * data will be saved.
+     */
     private void saveContacts(File file) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            // Write header line
             writer.write("Name,Area Code,Telephone Prefix,Line Number,Email,Is Mobile\n");
 
             for (Contact contact : contactsData) {
@@ -135,6 +167,14 @@ public class Application extends javafx.application.Application {
         }
     }
 
+    /**
+     * The function displays a dialog box with contact information and allows the user to edit and save
+     * the information.
+     * 
+     * @param contact The contact parameter is an instance of the Contact class, which contains
+     * information about a person's name, phone number, and email address.
+     * @return The method is returning a boolean value indicating whether the dialog was shown or not.
+     */
     private boolean showContactDialog(Contact contact) {
         Dialog<Contact> dialog = new Dialog<>();
         dialog.setTitle("Contact");
