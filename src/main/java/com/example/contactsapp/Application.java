@@ -40,13 +40,13 @@ public class Application extends javafx.application.Application {
      */
     @Override
     public void start(Stage primaryStage) {
-        // Set up the table
+        // Set up the table columns
         TableColumn<Contacts, String> nameColumn = new TableColumn<>("Name");
         TableColumn<Contacts, String> areaCodeColumn = new TableColumn<>("Area Code");
         TableColumn<Contacts, String> lineNumberColumn = new TableColumn<>("Line Number");
         TableColumn<Contacts, Boolean> isMobileColumn = new TableColumn<>("Is Mobile");
 
-        // Set up the table columns
+        // Set the cell value factories for each column
         nameColumn.setCellValueFactory(cellData -> cellData.getValue().nameProperty());
         areaCodeColumn.setCellValueFactory(cellData -> cellData.getValue().areaCodeProperty());
         isMobileColumn.setCellValueFactory(cellData -> cellData.getValue().isMobileProperty().asObject());
@@ -271,7 +271,7 @@ public class Application extends javafx.application.Application {
         //Use regex to check for invalid input
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == saveButtonType) {
-                if (!(/*areaCodeField.getText().matches("\\d+") && */lineNumberField.getText().matches("\\d+"))) {
+                if (!(lineNumberField.getText().matches("\\d+"))) {
                     Alert alert1 = new Alert(Alert.AlertType.INFORMATION);
                     alert1.setTitle("Error");
                     alert1.setHeaderText("Number Error");
