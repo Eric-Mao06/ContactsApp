@@ -11,7 +11,7 @@ public class Contacts{
     private BooleanProperty isMobile;
 
 
-    public Contacts(String aC, String tP, String lN, ObservableList<String> e, String n, boolean iM) {
+    public Contacts(String aC, String lN, ObservableList<String> e, String n, boolean iM) {
         this.postalCode = new SimpleStringProperty(aC);
         this.Number = new SimpleStringProperty(lN);
         this.emails = new SimpleListProperty<>(FXCollections.observableArrayList(e));
