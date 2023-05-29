@@ -1,4 +1,6 @@
 package com.example.contactsapp;
+
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -32,30 +34,29 @@ public class Application extends javafx.application.Application {
         TableColumn<Contacts, String> areaCodeColumn = new TableColumn<>("Area Code");
         TableColumn<Contacts, String> telephonePrefixColumn = new TableColumn<>("Telephone Prefix");
         TableColumn<Contacts, String> lineNumberColumn = new TableColumn<>("Line Number");
-        //TableColumn<Contacts, String> emailColumn = new TableColumn<>("Email");
         TableColumn<Contacts, Boolean> isMobileColumn = new TableColumn<>("Is Mobile");
 
         nameColumn.setCellValueFactory(cellData -> cellData.getValue().nameProperty());
         areaCodeColumn.setCellValueFactory(cellData -> cellData.getValue().areaCodeProperty());
-        telephonePrefixColumn.setCellValueFactory(cellData -> cellData.getValue().telephonePrefixProperty());
         lineNumberColumn.setCellValueFactory(cellData -> cellData.getValue().lineNumberProperty());
-        //emailColumn.setCellValueFactory(cellData -> cellData.getValue().emailProperty());
         isMobileColumn.setCellValueFactory(cellData -> cellData.getValue().isMobileProperty().asObject());
 
-        TableColumn<Contacts, ObservableList<String>> emailColumn = new TableColumn<>("Email");
-
-        emailColumn.setCellValueFactory(cellData -> cellData.getValue().emailsProperty());
-
+        TableColumn<Contacts, Contacts> emailColumn = new TableColumn<>("Emails");
+        emailColumn.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue()));
         emailColumn.setCellFactory(param -> new TableCell<>() {
+            private final Button btn = new Button("Show Emails");
+
             @Override
-            protected void updateItem(ObservableList<String> item, boolean empty) {
+            protected void updateItem(Contacts item, boolean empty) {
                 super.updateItem(item, empty);
 
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(String.join(", ", item));
+                if (item == null) {
+                    setGraphic(null);
+                    return;
                 }
+
+                setGraphic(btn);
+                btn.setOnAction(event -> showEmailsDialog(item));
             }
         });
 
@@ -86,17 +87,27 @@ public class Application extends javafx.application.Application {
         // Load contacts from the CSV file
         File contactsFile = new File("contacts.csv");
         loadContacts(contactsFile);
-
     }
+
+    private void showEmailsDialog(Contacts contact) {
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Emails of " + contact.getName());
+
+        ListView<String> emailListView = new ListView<>(FXCollections.observableArrayList(contact.getEmails()));
+        dialog.getDialogPane().setContent(emailListView);
+
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
+
+        dialog.showAndWait();
+    }
+
     private void addContact() {
-        Contacts newContact = new Contacts("0","0","0",FXCollections.observableArrayList(),"",false);
+        Contacts newContact = new Contacts("0", "0", "0", FXCollections.observableArrayList(), "", false);
         if (showContactDialog(newContact)) {
             contactsData.add(newContact);
             saveContacts(new File("contacts.csv"));
         }
     }
-
-
     private void editContact() {
         Contacts selectedContact = contactsTable.getSelectionModel().getSelectedItem();
         if (selectedContact != null) {
@@ -105,7 +116,6 @@ public class Application extends javafx.application.Application {
             }
         }
     }
-
     private void deleteContact() {
         int selectedIndex = contactsTable.getSelectionModel().getSelectedIndex();
         if (selectedIndex >= 0) {
@@ -113,7 +123,6 @@ public class Application extends javafx.application.Application {
             saveContacts(new File("contacts.csv"));
         }
     }
-
     private boolean loadContacts(File file) {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
@@ -135,17 +144,12 @@ public class Application extends javafx.application.Application {
         }
         return true;
     }
-
-
     private void saveContacts(File file) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            // Write header line
-            writer.write("Name,Area Code,Telephone Prefix,Line Number,Email,Is Mobile\n");
-
+            writer.write("Name,Postal Code,Phone Number,Email,Is Mobile\n"); //header line
             for (Contacts contact : contactsData) {
                 writer.write(String.join(",", contact.getName(),
                         contact.getAreaCode(),
-                        contact.getTelephonePrefix(),
                         contact.getLineNumber(),
                         String.join(";", contact.getEmails()),
                         String.valueOf(contact.getIsMobile())) + "\n");
@@ -166,7 +170,6 @@ public class Application extends javafx.application.Application {
 
         TextField nameField = new TextField(contact.getName());
         TextField areaCodeField = new TextField(String.valueOf(contact.getAreaCode()));
-        TextField telephonePrefixField = new TextField(String.valueOf(contact.getTelephonePrefix()));
         TextField lineNumberField = new TextField(String.valueOf(contact.getLineNumber()));
         ListView<String> emailListView = new ListView<>(FXCollections.observableArrayList(contact.getEmails()));
         Button addEmailButton = new Button("Add Email");
@@ -183,11 +186,9 @@ public class Application extends javafx.application.Application {
 
         grid.add(new Label("Name:"), 0, 0);
         grid.add(nameField, 1, 0);
-        grid.add(new Label("Area Code:"), 0, 1);
+        grid.add(new Label("Postal Code:"), 0, 1);
         grid.add(areaCodeField, 1, 1);
-        grid.add(new Label("Telephone Prefix:"), 0, 2);
-        grid.add(telephonePrefixField, 1, 2);
-        grid.add(new Label("Line Number:"), 0, 3);
+        grid.add(new Label("Phone Number:"), 0, 3);
         grid.add(lineNumberField, 1, 3);
         grid.add(new Label("Email:"), 0, 4);
         grid.add(emailListView, 1, 4);
@@ -202,7 +203,7 @@ public class Application extends javafx.application.Application {
 
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == saveButtonType) {
-                if (!(areaCodeField.getText().matches("\\d+")&&telephonePrefixField.getText().matches("\\d+")&&lineNumberField.getText().matches("\\d+"))){
+                if (!(/*areaCodeField.getText().matches("\\d+") && */lineNumberField.getText().matches("\\d+"))) {
                     Alert alert1 = new Alert(Alert.AlertType.INFORMATION);
                     alert1.setTitle("Error");
                     alert1.setHeaderText("Number Error");
@@ -222,7 +223,6 @@ public class Application extends javafx.application.Application {
                 }
                 contact.setName(nameField.getText());
                 contact.setAreaCode(areaCodeField.getText());
-                contact.setTelephonePrefix(telephonePrefixField.getText());
                 contact.setLineNumber(lineNumberField.getText());
                 contact.setEmails(FXCollections.observableArrayList(emailListView.getItems()));
                 contact.setIsMobile(isMobileField.isSelected());

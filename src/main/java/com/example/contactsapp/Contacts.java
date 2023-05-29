@@ -2,54 +2,39 @@ package com.example.contactsapp;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.control.TableColumn;
 
 public class Contacts{
-    private StringProperty areaCode;
-    private StringProperty telephonePrefix;
-    private StringProperty lineNumber;
+    private StringProperty postalCode;
+    private StringProperty Number;
     private ListProperty<String> emails;
     private StringProperty name;
     private BooleanProperty isMobile;
 
 
     public Contacts(String aC, String tP, String lN, ObservableList<String> e, String n, boolean iM) {
-        this.areaCode = new SimpleStringProperty(aC);
-        this.telephonePrefix = new SimpleStringProperty(tP);
-        this.lineNumber = new SimpleStringProperty(lN);
+        this.postalCode = new SimpleStringProperty(aC);
+        this.Number = new SimpleStringProperty(lN);
         this.emails = new SimpleListProperty<>(FXCollections.observableArrayList(e));
         this.name = new SimpleStringProperty(n);
         this.isMobile = new SimpleBooleanProperty(iM);
     }
 
+    public StringProperty areaCodeProperty() {return postalCode;}
+    public StringProperty lineNumberProperty() {return Number;}
     public ListProperty<String> emailsProperty() { return emails; }
-
-    public ObservableList<String> getEmails() { return emails.get(); }
-    public void setEmails(ObservableList<String> emails) { this.emails.set(emails); }
-
-
-    // Other methods...
-
-    public StringProperty areaCodeProperty() {return areaCode;}
-    public StringProperty telephonePrefixProperty() {return telephonePrefix;}
-    public StringProperty lineNumberProperty() {return lineNumber;}
-    //public StringProperty emailProperty() {return email;}
     public StringProperty nameProperty() {return name;}
     public BooleanProperty isMobileProperty() {return isMobile;}
 
-    public String getAreaCode() {return areaCode.get();}
-    public void setAreaCode(String areaCode) {this.areaCode.set(areaCode);}
-    public String getTelephonePrefix() {return telephonePrefix.get();}
-    public void setTelephonePrefix(String telephonePrefix) {this.telephonePrefix.set(telephonePrefix);}
-    public String getLineNumber() {return lineNumber.get();}
-    public void setLineNumber(String lineNumber) {this.lineNumber.set(lineNumber);}
-    //public String getEmail() {return email.get();}
-    //public void setEmail(String email) {this.email.set(email);}
+    public String getAreaCode() {return postalCode.get();}
+    public void setAreaCode(String areaCode) {this.postalCode.set(areaCode);}
+    public String getLineNumber() {return Number.get();}
+    public void setLineNumber(String lineNumber) {this.Number.set(lineNumber);}
+    public ObservableList<String> getEmails() { return emails.get(); }
+    public void setEmails(ObservableList<String> emails) { this.emails.set(emails); }
     public String getName() {return name.get();}
     public void setName(String name) {this.name.set(name);}
     public boolean getIsMobile() {return isMobile.get();}
     public void setIsMobile(boolean isMobile) {this.isMobile.set(isMobile);}
-
 }
 
 /*public class Contact{
