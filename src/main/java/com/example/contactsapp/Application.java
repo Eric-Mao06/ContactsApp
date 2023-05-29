@@ -1,5 +1,6 @@
 package com.example.contactsapp;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -31,15 +32,32 @@ public class Application extends javafx.application.Application {
         TableColumn<Contacts, String> areaCodeColumn = new TableColumn<>("Area Code");
         TableColumn<Contacts, String> telephonePrefixColumn = new TableColumn<>("Telephone Prefix");
         TableColumn<Contacts, String> lineNumberColumn = new TableColumn<>("Line Number");
-        TableColumn<Contacts, String> emailColumn = new TableColumn<>("Email");
+        //TableColumn<Contacts, String> emailColumn = new TableColumn<>("Email");
         TableColumn<Contacts, Boolean> isMobileColumn = new TableColumn<>("Is Mobile");
 
         nameColumn.setCellValueFactory(cellData -> cellData.getValue().nameProperty());
         areaCodeColumn.setCellValueFactory(cellData -> cellData.getValue().areaCodeProperty());
         telephonePrefixColumn.setCellValueFactory(cellData -> cellData.getValue().telephonePrefixProperty());
         lineNumberColumn.setCellValueFactory(cellData -> cellData.getValue().lineNumberProperty());
-        emailColumn.setCellValueFactory(cellData -> cellData.getValue().emailProperty());
+        //emailColumn.setCellValueFactory(cellData -> cellData.getValue().emailProperty());
         isMobileColumn.setCellValueFactory(cellData -> cellData.getValue().isMobileProperty().asObject());
+
+        TableColumn<Contacts, ObservableList<String>> emailColumn = new TableColumn<>("Email");
+
+        emailColumn.setCellValueFactory(cellData -> cellData.getValue().emailsProperty());
+
+        emailColumn.setCellFactory(param -> new TableCell<>() {
+            @Override
+            protected void updateItem(ObservableList<String> item, boolean empty) {
+                super.updateItem(item, empty);
+
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(String.join(", ", item));
+                }
+            }
+        });
 
         contactsTable.getColumns().addAll(nameColumn, areaCodeColumn, telephonePrefixColumn, lineNumberColumn, emailColumn, isMobileColumn);
         contactsTable.setItems(contactsData);
@@ -71,12 +89,13 @@ public class Application extends javafx.application.Application {
 
     }
     private void addContact() {
-        Contacts newContact = new Contacts("0","0","0","","",false);
+        Contacts newContact = new Contacts("0","0","0",FXCollections.observableArrayList(),"",false);
         if (showContactDialog(newContact)) {
             contactsData.add(newContact);
             saveContacts(new File("contacts.csv"));
         }
     }
+
 
     private void editContact() {
         Contacts selectedContact = contactsTable.getSelectionModel().getSelectedItem();
@@ -98,7 +117,7 @@ public class Application extends javafx.application.Application {
     private boolean loadContacts(File file) {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
-            reader.readLine();
+            reader.readLine(); // Skip header
             while ((line = reader.readLine()) != null) {
                 String[] data = line.split(",");
                 if (data.length >= 6) {
@@ -106,9 +125,9 @@ public class Application extends javafx.application.Application {
                     String areaCode = data[1];
                     String telephonePrefix = data[2];
                     String lineNumber = data[3];
-                    String email = data[4];
+                    ObservableList<String> emails = FXCollections.observableArrayList(data[4].split(";"));
                     boolean isMobile = Boolean.parseBoolean(data[5]);
-                    contactsData.add(new Contacts(areaCode, telephonePrefix, lineNumber, email, name, isMobile));
+                    contactsData.add(new Contacts(areaCode, telephonePrefix, lineNumber, emails, name, isMobile));
                 }
             }
         } catch (IOException e) {
@@ -117,18 +136,19 @@ public class Application extends javafx.application.Application {
         return true;
     }
 
+
     private void saveContacts(File file) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             // Write header line
             writer.write("Name,Area Code,Telephone Prefix,Line Number,Email,Is Mobile\n");
 
             for (Contacts contact : contactsData) {
-                writer.write(contact.getName() + "," +
-                        contact.getAreaCode() + "," +
-                        contact.getTelephonePrefix() + "," +
-                        contact.getLineNumber() + "," +
-                        contact.getEmail() + "," +
-                        contact.getIsMobile() + "\n");
+                writer.write(String.join(",", contact.getName(),
+                        contact.getAreaCode(),
+                        contact.getTelephonePrefix(),
+                        contact.getLineNumber(),
+                        String.join(";", contact.getEmails()),
+                        String.valueOf(contact.getIsMobile())) + "\n");
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -148,7 +168,16 @@ public class Application extends javafx.application.Application {
         TextField areaCodeField = new TextField(String.valueOf(contact.getAreaCode()));
         TextField telephonePrefixField = new TextField(String.valueOf(contact.getTelephonePrefix()));
         TextField lineNumberField = new TextField(String.valueOf(contact.getLineNumber()));
-        TextField emailField = new TextField(contact.getEmail());
+        ListView<String> emailListView = new ListView<>(FXCollections.observableArrayList(contact.getEmails()));
+        Button addEmailButton = new Button("Add Email");
+        addEmailButton.setOnAction(e -> {
+            TextInputDialog emailDialog = new TextInputDialog();
+            emailDialog.setTitle("Add Email");
+            emailDialog.setHeaderText(null);
+            emailDialog.setContentText("Email:");
+            Optional<String> result = emailDialog.showAndWait();
+            result.ifPresent(email -> emailListView.getItems().add(email));
+        });
         CheckBox isMobileField = new CheckBox();
         isMobileField.setSelected(contact.getIsMobile());
 
@@ -161,7 +190,8 @@ public class Application extends javafx.application.Application {
         grid.add(new Label("Line Number:"), 0, 3);
         grid.add(lineNumberField, 1, 3);
         grid.add(new Label("Email:"), 0, 4);
-        grid.add(emailField, 1, 4);
+        grid.add(emailListView, 1, 4);
+        grid.add(addEmailButton, 2, 4);
         grid.add(new Label("Is Mobile:"), 0, 5);
         grid.add(isMobileField, 1, 5);
 
@@ -180,22 +210,22 @@ public class Application extends javafx.application.Application {
                     alert1.showAndWait();
                     return null;
                 }
-                if(!emailField.getText().contains("@")){
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                    alert.setTitle("Error");
-                    alert.setHeaderText("Email Address Error");
-                    alert.setContentText("The format of the email is incorrect (include a @)");
-                    alert.showAndWait();
-                    return null;
+                for (String email : emailListView.getItems()) {
+                    if (!email.contains("@")) {
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle("Error");
+                        alert.setHeaderText("Email Address Error");
+                        alert.setContentText("The format of the email is incorrect (include a @)");
+                        alert.showAndWait();
+                        return null;
+                    }
                 }
-                else{
-                    contact.setName(nameField.getText());
-                    contact.setAreaCode(areaCodeField.getText());
-                    contact.setTelephonePrefix(telephonePrefixField.getText());
-                    contact.setLineNumber(lineNumberField.getText());
-                    contact.setEmail(emailField.getText());
-                    contact.setIsMobile(isMobileField.isSelected());
-                }
+                contact.setName(nameField.getText());
+                contact.setAreaCode(areaCodeField.getText());
+                contact.setTelephonePrefix(telephonePrefixField.getText());
+                contact.setLineNumber(lineNumberField.getText());
+                contact.setEmails(FXCollections.observableArrayList(emailListView.getItems()));
+                contact.setIsMobile(isMobileField.isSelected());
                 return contact;
             }
             return null;
