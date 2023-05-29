@@ -113,7 +113,7 @@ public class Application extends javafx.application.Application {
         root.setCenter(contactsTable);
         root.setBottom(buttons);
 
-        Scene scene = new Scene(root, 600, 400);
+        Scene scene = new Scene(root, 1000, 800);
         primaryStage.setScene(scene);
         primaryStage.setTitle("Contacts App");
         primaryStage.show();
@@ -143,7 +143,7 @@ public class Application extends javafx.application.Application {
      * Add a new contact to the application.
      */
     private void addContact() {
-        Contacts newContact = new Contacts("0", "0",FXCollections.observableArrayList(), "", false);
+        Contacts newContact = new Contacts("", "",FXCollections.observableArrayList(), "", false);
         if (showContactDialog(newContact)) {
             contactsData.add(newContact);
             saveContacts(new File("contacts.csv"));
