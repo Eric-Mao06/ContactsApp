@@ -1,35 +1,35 @@
 package com.example.contactsapp;
 import javafx.beans.property.*;
 
-public class Contact{
-    private IntegerProperty areaCode;
-    private IntegerProperty telephonePrefix;
-    private IntegerProperty lineNumber;
+public class Contacts{
+    private StringProperty areaCode;
+    private StringProperty telephonePrefix;
+    private StringProperty lineNumber;
     private StringProperty email;
     private StringProperty name;
     private BooleanProperty isMobile;
 
-    public Contact(int aC, int tP, int lN, String e, String n, boolean iM) {
-        this.areaCode = new SimpleIntegerProperty(aC);
-        this.telephonePrefix = new SimpleIntegerProperty(tP);
-        this.lineNumber = new SimpleIntegerProperty(lN);
+    public Contacts(String aC, String tP, String lN, String e, String n, boolean iM) {
+        this.areaCode = new SimpleStringProperty(aC);
+        this.telephonePrefix = new SimpleStringProperty(tP);
+        this.lineNumber = new SimpleStringProperty(lN);
         this.email = new SimpleStringProperty(e);
         this.name = new SimpleStringProperty(n);
         this.isMobile = new SimpleBooleanProperty(iM);
     }
-    public IntegerProperty areaCodeProperty() {return areaCode;}
-    public IntegerProperty telephonePrefixProperty() {return telephonePrefix;}
-    public IntegerProperty lineNumberProperty() {return lineNumber;}
+    public StringProperty areaCodeProperty() {return areaCode;}
+    public StringProperty telephonePrefixProperty() {return telephonePrefix;}
+    public StringProperty lineNumberProperty() {return lineNumber;}
     public StringProperty emailProperty() {return email;}
     public StringProperty nameProperty() {return name;}
     public BooleanProperty isMobileProperty() {return isMobile;}
 
-    public int getAreaCode() {return areaCode.get();}
-    public void setAreaCode(int areaCode) {this.areaCode.set(areaCode);}
-    public int getTelephonePrefix() {return telephonePrefix.get();}
-    public void setTelephonePrefix(int telephonePrefix) {this.telephonePrefix.set(telephonePrefix);}
-    public int getLineNumber() {return lineNumber.get();}
-    public void setLineNumber(int lineNumber) {this.lineNumber.set(lineNumber);}
+    public String getAreaCode() {return areaCode.get();}
+    public void setAreaCode(String areaCode) {this.areaCode.set(areaCode);}
+    public String getTelephonePrefix() {return telephonePrefix.get();}
+    public void setTelephonePrefix(String telephonePrefix) {this.telephonePrefix.set(telephonePrefix);}
+    public String getLineNumber() {return lineNumber.get();}
+    public void setLineNumber(String lineNumber) {this.lineNumber.set(lineNumber);}
     public String getEmail() {return email.get();}
     public void setEmail(String email) {this.email.set(email);}
     public String getName() {return name.get();}

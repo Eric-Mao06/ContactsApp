@@ -1,5 +1,4 @@
 package com.example.contactsapp;
-
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -19,46 +18,33 @@ import java.io.IOException;
 import java.util.Optional;
 
 public class Application extends javafx.application.Application {
-    // This line of code is creating a new TableView object that will display a list of contacts. The
-    // TableView is parameterized with the Contact class, which means that it will display a list of
-    // Contact objects. The TableView is then assigned to the private instance variable contactsTable.
-    private TableView<Contact> contactsTable = new TableView<>();
-    // This line of code is creating an ObservableList of Contact objects called `contactsData` using
-    // the `FXCollections.observableArrayList()` method. The `ObservableList` is a type of list that
-    // allows listeners to track changes when elements are added, removed, or updated. This
-    // `ObservableList` will be used to store the data for the TableView that displays the list of
-    // contacts in the application.
-    private ObservableList<Contact> contactsData = FXCollections.observableArrayList();
+    private TableView<Contacts> contactsTable = new TableView<>();
+    private ObservableList<Contacts> contactsData = FXCollections.observableArrayList();
 
     public static void main(String[] args) {
         launch(args);
     }
 
-    /**
-     * This function sets up a GUI for a contacts app with a table of contacts and buttons to add,
-     * edit, and delete contacts.
-     * 
-     * @param primaryStage The main window of the application, which is an instance of the Stage class.
-     * It is the top-level container for all JavaFX content.
-     */
     public void start(Stage primaryStage) {
-        TableColumn<Contact, String> nameColumn = new TableColumn<>("Name");
-        TableColumn<Contact, Integer> areaCodeColumn = new TableColumn<>("Area Code");
-        TableColumn<Contact, Integer> telephonePrefixColumn = new TableColumn<>("Telephone Prefix");
-        TableColumn<Contact, Integer> lineNumberColumn = new TableColumn<>("Line Number");
-        TableColumn<Contact, String> emailColumn = new TableColumn<>("Email");
-        TableColumn<Contact, Boolean> isMobileColumn = new TableColumn<>("Is Mobile");
+
+        TableColumn<Contacts, String> nameColumn = new TableColumn<>("Name");
+        TableColumn<Contacts, String> areaCodeColumn = new TableColumn<>("Area Code");
+        TableColumn<Contacts, String> telephonePrefixColumn = new TableColumn<>("Telephone Prefix");
+        TableColumn<Contacts, String> lineNumberColumn = new TableColumn<>("Line Number");
+        TableColumn<Contacts, String> emailColumn = new TableColumn<>("Email");
+        TableColumn<Contacts, Boolean> isMobileColumn = new TableColumn<>("Is Mobile");
 
         nameColumn.setCellValueFactory(cellData -> cellData.getValue().nameProperty());
-        areaCodeColumn.setCellValueFactory(cellData -> cellData.getValue().areaCodeProperty().asObject());
-        telephonePrefixColumn.setCellValueFactory(cellData -> cellData.getValue().telephonePrefixProperty().asObject());
-        lineNumberColumn.setCellValueFactory(cellData -> cellData.getValue().lineNumberProperty().asObject());
+        areaCodeColumn.setCellValueFactory(cellData -> cellData.getValue().areaCodeProperty());
+        telephonePrefixColumn.setCellValueFactory(cellData -> cellData.getValue().telephonePrefixProperty());
+        lineNumberColumn.setCellValueFactory(cellData -> cellData.getValue().lineNumberProperty());
         emailColumn.setCellValueFactory(cellData -> cellData.getValue().emailProperty());
         isMobileColumn.setCellValueFactory(cellData -> cellData.getValue().isMobileProperty().asObject());
 
         contactsTable.getColumns().addAll(nameColumn, areaCodeColumn, telephonePrefixColumn, lineNumberColumn, emailColumn, isMobileColumn);
         contactsTable.setItems(contactsData);
 
+        // Set up buttons and their event handlers
         Button addButton = new Button("Add");
         addButton.setOnAction(event -> addContact());
 
@@ -79,26 +65,21 @@ public class Application extends javafx.application.Application {
         primaryStage.setTitle("Contacts App");
         primaryStage.show();
 
+        // Load contacts from the CSV file
         File contactsFile = new File("contacts.csv");
         loadContacts(contactsFile);
+
     }
-    /**
-     * The function adds a new contact to a list and saves it to a CSV file.
-     */
     private void addContact() {
-        // This line of code creates a new Contact object with default values for the properties, the default values prevent a bug that occurs when users try to load a contact without all of the required variables.
-        Contact newContact = new Contact(0,0,0,"","",false);
+        Contacts newContact = new Contacts("0","0","0","","",false);
         if (showContactDialog(newContact)) {
             contactsData.add(newContact);
             saveContacts(new File("contacts.csv"));
         }
     }
 
-    /**
-     * This function edits a selected contact and saves the changes to a CSV file.
-     */
     private void editContact() {
-        Contact selectedContact = contactsTable.getSelectionModel().getSelectedItem();
+        Contacts selectedContact = contactsTable.getSelectionModel().getSelectedItem();
         if (selectedContact != null) {
             if (showContactDialog(selectedContact)) {
                 saveContacts(new File("contacts.csv"));
@@ -106,9 +87,6 @@ public class Application extends javafx.application.Application {
         }
     }
 
-    /**
-     * This function deletes a selected contact from a table and saves the updated list to a CSV file.
-     */
     private void deleteContact() {
         int selectedIndex = contactsTable.getSelectionModel().getSelectedIndex();
         if (selectedIndex >= 0) {
@@ -117,12 +95,7 @@ public class Application extends javafx.application.Application {
         }
     }
 
-    /**
-     * This function loads contact data from a file and creates Contact objects from the data.
-     * 
-     * @param file a File object representing the file containing contact information to be loaded
-     */
-    private void loadContacts(File file) {
+    private boolean loadContacts(File file) {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             reader.readLine();
@@ -130,31 +103,26 @@ public class Application extends javafx.application.Application {
                 String[] data = line.split(",");
                 if (data.length >= 6) {
                     String name = data[0];
-                    int areaCode = Integer.parseInt(data[1]);
-                    int telephonePrefix = Integer.parseInt(data[2]);
-                    int lineNumber = Integer.parseInt(data[3]);
+                    String areaCode = data[1];
+                    String telephonePrefix = data[2];
+                    String lineNumber = data[3];
                     String email = data[4];
                     boolean isMobile = Boolean.parseBoolean(data[5]);
-
-                    contactsData.add(new Contact(areaCode, telephonePrefix, lineNumber, email, name, isMobile));
+                    contactsData.add(new Contacts(areaCode, telephonePrefix, lineNumber, email, name, isMobile));
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return true;
     }
 
-    /**
-     * This function saves contact data to a file in CSV format.
-     * 
-     * @param file The file parameter is the file object that represents the file where the contacts
-     * data will be saved.
-     */
     private void saveContacts(File file) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            // Write header line
             writer.write("Name,Area Code,Telephone Prefix,Line Number,Email,Is Mobile\n");
 
-            for (Contact contact : contactsData) {
+            for (Contacts contact : contactsData) {
                 writer.write(contact.getName() + "," +
                         contact.getAreaCode() + "," +
                         contact.getTelephonePrefix() + "," +
@@ -167,16 +135,8 @@ public class Application extends javafx.application.Application {
         }
     }
 
-    /**
-     * The function displays a dialog box with contact information and allows the user to edit and save
-     * the information.
-     * 
-     * @param contact The contact parameter is an instance of the Contact class, which contains
-     * information about a person's name, phone number, and email address.
-     * @return The method is returning a boolean value indicating whether the dialog was shown or not.
-     */
-    private boolean showContactDialog(Contact contact) {
-        Dialog<Contact> dialog = new Dialog<>();
+    private boolean showContactDialog(Contacts contact) {
+        Dialog<Contacts> dialog = new Dialog<>();
         dialog.setTitle("Contact");
 
         GridPane grid = new GridPane();
@@ -212,19 +172,36 @@ public class Application extends javafx.application.Application {
 
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == saveButtonType) {
-                contact.setName(nameField.getText());
-                contact.setAreaCode(Integer.parseInt(areaCodeField.getText()));
-                contact.setTelephonePrefix(Integer.parseInt(telephonePrefixField.getText()));
-                contact.setLineNumber(Integer.parseInt(lineNumberField.getText()));
-                contact.setEmail(emailField.getText());
-                contact.setIsMobile(isMobileField.isSelected());
-
+                if (!(areaCodeField.getText().matches("\\d+")&&telephonePrefixField.getText().matches("\\d+")&&lineNumberField.getText().matches("\\d+"))){
+                    Alert alert1 = new Alert(Alert.AlertType.INFORMATION);
+                    alert1.setTitle("Error");
+                    alert1.setHeaderText("Number Error");
+                    alert1.setContentText("You must put in only numbers in the telephone, line number, and area code field");
+                    alert1.showAndWait();
+                    return null;
+                }
+                if(!emailField.getText().contains("@")){
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Error");
+                    alert.setHeaderText("Email Address Error");
+                    alert.setContentText("The format of the email is incorrect (include a @)");
+                    alert.showAndWait();
+                    return null;
+                }
+                else{
+                    contact.setName(nameField.getText());
+                    contact.setAreaCode(areaCodeField.getText());
+                    contact.setTelephonePrefix(telephonePrefixField.getText());
+                    contact.setLineNumber(lineNumberField.getText());
+                    contact.setEmail(emailField.getText());
+                    contact.setIsMobile(isMobileField.isSelected());
+                }
                 return contact;
             }
             return null;
         });
 
-        Optional<Contact> result = dialog.showAndWait();
+        Optional<Contacts> result = dialog.showAndWait();
         return result.isPresent();
     }
 }
