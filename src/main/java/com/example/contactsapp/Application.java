@@ -2,7 +2,6 @@ package com.example.contactsapp;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -20,27 +19,64 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Optional;
 
+/**
+ * Represents a Contacts Application using JavaFX.
+ */
 public class Application extends javafx.application.Application {
     private TableView<Contacts> contactsTable = new TableView<>();
     private ObservableList<Contacts> contactsData = FXCollections.observableArrayList();
 
+    /**
+     * Main method to launch the application.
+     * @param args Command line arguments.
+     */
     public static void main(String[] args) {
         launch(args);
     }
 
+    /**
+     * Starts the JavaFX application.
+     * @param primaryStage The main window of the application.
+     */
+    @Override
     public void start(Stage primaryStage) {
-
+        // Set up the table
         TableColumn<Contacts, String> nameColumn = new TableColumn<>("Name");
         TableColumn<Contacts, String> areaCodeColumn = new TableColumn<>("Area Code");
-        TableColumn<Contacts, String> telephonePrefixColumn = new TableColumn<>("Telephone Prefix");
         TableColumn<Contacts, String> lineNumberColumn = new TableColumn<>("Line Number");
         TableColumn<Contacts, Boolean> isMobileColumn = new TableColumn<>("Is Mobile");
 
+        // Set up the table columns
         nameColumn.setCellValueFactory(cellData -> cellData.getValue().nameProperty());
         areaCodeColumn.setCellValueFactory(cellData -> cellData.getValue().areaCodeProperty());
-        lineNumberColumn.setCellValueFactory(cellData -> cellData.getValue().lineNumberProperty());
         isMobileColumn.setCellValueFactory(cellData -> cellData.getValue().isMobileProperty().asObject());
 
+        //Custom Rendering for Phone Number
+        lineNumberColumn.setCellValueFactory(cellData -> cellData.getValue().lineNumberProperty());
+        lineNumberColumn.setCellFactory(column -> {
+            return new TableCell<Contacts, String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+
+                    if (item == null || empty) {
+                        setText(null);
+                    } else {
+                        // Check if the item is 10 digits long, if not, just display it as is
+                        if (item.matches("\\d{10}")) {
+                            String formattedNumber = "(" + item.substring(0, 3) + ") "
+                                    + item.substring(3, 6) + "-"
+                                    + item.substring(6, 10);
+                            setText(formattedNumber);
+                        } else {
+                            setText("Line Number: " + item);
+                        }
+                    }
+                }
+            };
+        });
+
+        // Set up the email column
         TableColumn<Contacts, Contacts> emailColumn = new TableColumn<>("Emails");
         emailColumn.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue()));
         emailColumn.setCellFactory(param -> new TableCell<>() {
@@ -60,16 +96,14 @@ public class Application extends javafx.application.Application {
             }
         });
 
-        contactsTable.getColumns().addAll(nameColumn, areaCodeColumn, telephonePrefixColumn, lineNumberColumn, emailColumn, isMobileColumn);
+        contactsTable.getColumns().addAll(nameColumn, areaCodeColumn, lineNumberColumn, emailColumn, isMobileColumn);
         contactsTable.setItems(contactsData);
 
         // Set up buttons and their event handlers
         Button addButton = new Button("Add");
         addButton.setOnAction(event -> addContact());
-
         Button editButton = new Button("Edit");
         editButton.setOnAction(event -> editContact());
-
         Button deleteButton = new Button("Delete");
         deleteButton.setOnAction(event -> deleteContact());
 
@@ -89,6 +123,10 @@ public class Application extends javafx.application.Application {
         loadContacts(contactsFile);
     }
 
+    /**
+     * Show a dialog to display emails for the provided contact.
+     * @param contact Contact whose emails need to be displayed.
+     */
     private void showEmailsDialog(Contacts contact) {
         Dialog<String> dialog = new Dialog<>();
         dialog.setTitle("Emails of " + contact.getName());
@@ -101,6 +139,9 @@ public class Application extends javafx.application.Application {
         dialog.showAndWait();
     }
 
+    /**
+     * Add a new contact to the application.
+     */
     private void addContact() {
         Contacts newContact = new Contacts("0", "0",FXCollections.observableArrayList(), "", false);
         if (showContactDialog(newContact)) {
@@ -108,6 +149,10 @@ public class Application extends javafx.application.Application {
             saveContacts(new File("contacts.csv"));
         }
     }
+
+    /**
+     * Edit the selected contact in the application.
+     */
     private void editContact() {
         Contacts selectedContact = contactsTable.getSelectionModel().getSelectedItem();
         if (selectedContact != null) {
@@ -116,6 +161,10 @@ public class Application extends javafx.application.Application {
             }
         }
     }
+
+    /**
+     * Delete the selected contact from the application.
+     */
     private void deleteContact() {
         int selectedIndex = contactsTable.getSelectionModel().getSelectedIndex();
         if (selectedIndex >= 0) {
@@ -123,6 +172,12 @@ public class Application extends javafx.application.Application {
             saveContacts(new File("contacts.csv"));
         }
     }
+
+    /**
+     * Load contacts from the provided file.
+     * @param file File containing the contact data.
+     * @return true if contacts are loaded successfully, otherwise false.
+     */
     private boolean loadContacts(File file) {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
@@ -143,6 +198,11 @@ public class Application extends javafx.application.Application {
         }
         return true;
     }
+
+    /**
+     * Save contacts to the provided file.
+     * @param file File to save the contact data to.
+     */
     private void saveContacts(File file) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write("Name,Postal Code,Phone Number,Email,Is Mobile\n"); //header line
@@ -158,7 +218,13 @@ public class Application extends javafx.application.Application {
         }
     }
 
+    /**
+     * Show a dialog to edit the provided contact.
+     * @param contact Contact to show in the dialog.
+     * @return true if dialog was shown successfully, otherwise false.
+     */
     private boolean showContactDialog(Contacts contact) {
+        // Set up the dialog
         Dialog<Contacts> dialog = new Dialog<>();
         dialog.setTitle("Contact");
 
@@ -167,6 +233,7 @@ public class Application extends javafx.application.Application {
         grid.setVgap(10);
         grid.setPadding(new Insets(20, 150, 10, 10));
 
+        // Set up the fields
         TextField nameField = new TextField(contact.getName());
         TextField areaCodeField = new TextField(String.valueOf(contact.getAreaCode()));
         TextField lineNumberField = new TextField(String.valueOf(contact.getLineNumber()));
@@ -183,6 +250,7 @@ public class Application extends javafx.application.Application {
         CheckBox isMobileField = new CheckBox();
         isMobileField.setSelected(contact.getIsMobile());
 
+        // Add the fields to the dialog
         grid.add(new Label("Name:"), 0, 0);
         grid.add(nameField, 1, 0);
         grid.add(new Label("Postal Code:"), 0, 1);
@@ -200,6 +268,7 @@ public class Application extends javafx.application.Application {
         ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
 
+        //Use regex to check for invalid input
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == saveButtonType) {
                 if (!(/*areaCodeField.getText().matches("\\d+") && */lineNumberField.getText().matches("\\d+"))) {
