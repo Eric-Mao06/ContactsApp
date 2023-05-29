@@ -102,7 +102,7 @@ public class Application extends javafx.application.Application {
     }
 
     private void addContact() {
-        Contacts newContact = new Contacts("0", "0", "0", FXCollections.observableArrayList(), "", false);
+        Contacts newContact = new Contacts("0", "0",FXCollections.observableArrayList(), "", false);
         if (showContactDialog(newContact)) {
             contactsData.add(newContact);
             saveContacts(new File("contacts.csv"));
@@ -132,11 +132,10 @@ public class Application extends javafx.application.Application {
                 if (data.length >= 6) {
                     String name = data[0];
                     String areaCode = data[1];
-                    String telephonePrefix = data[2];
                     String lineNumber = data[3];
                     ObservableList<String> emails = FXCollections.observableArrayList(data[4].split(";"));
                     boolean isMobile = Boolean.parseBoolean(data[5]);
-                    contactsData.add(new Contacts(areaCode, telephonePrefix, lineNumber, emails, name, isMobile));
+                    contactsData.add(new Contacts(areaCode, lineNumber, emails, name, isMobile));
                 }
             }
         } catch (IOException e) {
