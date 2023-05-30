@@ -186,11 +186,13 @@ public class Application extends javafx.application.Application {
      * @return true if contacts are loaded successfully, otherwise false.
      */
     private boolean loadContacts(File file) {
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) { //use try to avoid resource leak
             String line;
-            reader.readLine(); // Skip header
+            // Skip header
+            reader.readLine();
             while ((line = reader.readLine()) != null) {
-                String[] data = line.split(","); //turn CSV into array of strings
+                //turn CSV into array of strings
+                String[] data = line.split(",");
                 if (data.length >= 5) {
                     String name = data[0];
                     String areaCode = data[1];
@@ -211,8 +213,9 @@ public class Application extends javafx.application.Application {
      * @param file File to save the contact data to.
      */
     private void saveContacts(File file) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            writer.write("Name,Postal Code,Phone Number,Email,Is Mobile\n"); //header line
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) { //use try to avoid resource leak
+            //header line
+            writer.write("Name,Postal Code,Phone Number,Email,Is Mobile\n");
             for (Contacts contact : contactsData) {
                 writer.write(String.join(",", contact.getName(),
                         contact.getAreaCode(),
@@ -245,6 +248,8 @@ public class Application extends javafx.application.Application {
         TextField areaCodeField = new TextField(String.valueOf(contact.getAreaCode()));
         TextField lineNumberField = new TextField(String.valueOf(contact.getLineNumber()));
         ListView<String> emailListView = new ListView<>(FXCollections.observableArrayList(contact.getEmails()));
+
+        // Set up add email functionality
         Button addEmailButton = new Button("Add Email");
         addEmailButton.setOnAction(e -> {
             TextInputDialog emailDialog = new TextInputDialog();
@@ -255,7 +260,8 @@ public class Application extends javafx.application.Application {
             result.ifPresent(email -> {
                 if (isValidEmail(Collections.singletonList(email))) {
                     emailListView.getItems().add(email);
-                } else {
+                }
+                else {
                     Alert alert = new Alert(Alert.AlertType.WARNING);
                     alert.setTitle("Invalid Email");
                     alert.setHeaderText(null);
@@ -263,6 +269,15 @@ public class Application extends javafx.application.Application {
                     alert.showAndWait();
                 }
             });
+        });
+
+        // Delete the selected email from the list
+        Button deleteEmailButton = new Button("Delete Email");
+        deleteEmailButton.setOnAction(e -> {
+            String selectedEmail = emailListView.getSelectionModel().getSelectedItem();
+            if (selectedEmail != null) {
+                emailListView.getItems().remove(selectedEmail);
+            }
         });
 
         CheckBox isMobileField = new CheckBox();
@@ -277,9 +292,11 @@ public class Application extends javafx.application.Application {
         grid.add(lineNumberField, 1, 3);
         grid.add(new Label("Email:"), 0, 4);
         grid.add(emailListView, 1, 4);
-        grid.add(addEmailButton, 2, 4);
-        grid.add(new Label("Is Mobile:"), 0, 5);
-        grid.add(isMobileField, 1, 5);
+        //put add and delete buttons on a different row for better UI
+        grid.add(addEmailButton, 0, 5);
+        grid.add(deleteEmailButton, 1, 5);
+        grid.add(new Label("Is Mobile:"), 0, 6);
+        grid.add(isMobileField, 1, 6);
 
         dialog.getDialogPane().setContent(grid);
 
@@ -289,12 +306,14 @@ public class Application extends javafx.application.Application {
         // Get the reference to the "Save" button
         Button saveButton = (Button) dialog.getDialogPane().lookupButton(saveButtonType);
 
+        // Allow/Disallow the user to save depending on whether all fields are filled in
         saveButton.addEventFilter(ActionEvent.ACTION, event -> {
+            //use regex to check if the number is 10 digits, and if the area code has invalid characters, and if the email is valid, and if the email is empty
             if ((lineNumberField.getText().isEmpty()) ||
                     (!lineNumberField.getText().matches("\\d+") || !lineNumberField.getText().matches("\\d{10}")) ||
                     Pattern.compile("[\\p{So}]").matcher(areaCodeField.getText()).find() ||
                     !isValidEmail(emailListView.getItems())) {
-
+                //create alert
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Error");
 
@@ -308,13 +327,12 @@ public class Application extends javafx.application.Application {
                     alert.setHeaderText("Email Address Error");
                     alert.setContentText("The format of the email is incorrect");
                 }
-
                 alert.showAndWait();
                 event.consume();
             }
         });
 
-//Use regex to check for invalid input
+        // Convert the result to a contact when the save button is clicked
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == saveButtonType) {
                 contact.setName(nameField.getText());
@@ -326,13 +344,15 @@ public class Application extends javafx.application.Application {
             }
             return null;
         });
-
         Optional<Contacts> result = dialog.showAndWait();
         return result.isPresent();
-
     }
-
-    //check if the email is valid with text@text format, return null if it's not and return the original string if it is.
+    /**
+     * check if the email is valid with text@text format, return null if it's not and return the original string if it is.
+     * Source: https://stackoverflow.com/questions/624581/what-is-the-best-java-email-address-validation-method
+     * @param emails List of emails to check.
+     * @return true if all emails are valid, otherwise false.
+     */
     public static boolean isValidEmail(List<String> emails) {
         Pattern pattern = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
 
@@ -344,6 +364,12 @@ public class Application extends javafx.application.Application {
         }
         return true;
     }
+    /**
+     * Check if a given string contains emojis
+     * Source: https://stackoverflow.com/questions/30757193/how-to-check-whether-the-string-contains-emoji-or-not-in-java
+     * @param source
+     * @return
+     */
     public static boolean hasEmoji(String source) {
         for (int i = 0; i < source.length(); i++) {
             Character.UnicodeBlock block = Character.UnicodeBlock.of(source.charAt(i));
@@ -360,6 +386,4 @@ public class Application extends javafx.application.Application {
         }
         return false;
     }
-
-
 }
