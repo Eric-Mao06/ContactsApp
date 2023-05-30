@@ -43,9 +43,16 @@ public class Contacts {
     // Standard getter methods
     public String getAreaCode() { return postalCode.get(); }
     public String getLineNumber() { return number.get(); }
-    public ObservableList<String> getEmails() { return emails.get(); }
+    public ObservableList<String> getEmails() { return this.emails.get(); }
     public String getName() { return name.get(); }
     public boolean getIsMobile() { return isMobile.get(); }
+    public String getEmailAt(int index) {
+        if (index < 0 || index >= getEmails().size()) {
+            throw new IllegalArgumentException("Invalid index");
+        }
+        return getEmails().get(index);
+    }
+
 
     // Standard setter methods
     public void setAreaCode(String areaCode) { this.postalCode.set(areaCode); }

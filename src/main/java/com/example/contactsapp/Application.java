@@ -11,6 +11,13 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javafx.event.ActionEvent;
+
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -183,13 +190,13 @@ public class Application extends javafx.application.Application {
             String line;
             reader.readLine(); // Skip header
             while ((line = reader.readLine()) != null) {
-                String[] data = line.split(",");
-                if (data.length >= 6) {
+                String[] data = line.split(","); //turn CSV into array of strings
+                if (data.length >= 5) {
                     String name = data[0];
                     String areaCode = data[1];
-                    String lineNumber = data[3];
-                    ObservableList<String> emails = FXCollections.observableArrayList(data[4].split(";"));
-                    boolean isMobile = Boolean.parseBoolean(data[5]);
+                    String lineNumber = data[2];
+                    ObservableList<String> emails = FXCollections.observableArrayList(data[3].split(";")); //split emails by ;
+                    boolean isMobile = Boolean.parseBoolean(data[4]); //parse boolean
                     contactsData.add(new Contacts(areaCode, lineNumber, emails, name, isMobile));
                 }
             }
@@ -245,8 +252,19 @@ public class Application extends javafx.application.Application {
             emailDialog.setHeaderText(null);
             emailDialog.setContentText("Email:");
             Optional<String> result = emailDialog.showAndWait();
-            result.ifPresent(email -> emailListView.getItems().add(email));
+            result.ifPresent(email -> {
+                if (isValidEmail(Collections.singletonList(email))) {
+                    emailListView.getItems().add(email);
+                } else {
+                    Alert alert = new Alert(Alert.AlertType.WARNING);
+                    alert.setTitle("Invalid Email");
+                    alert.setHeaderText(null);
+                    alert.setContentText("The email address entered is invalid.");
+                    alert.showAndWait();
+                }
+            });
         });
+
         CheckBox isMobileField = new CheckBox();
         isMobileField.setSelected(contact.getIsMobile());
 
@@ -266,29 +284,39 @@ public class Application extends javafx.application.Application {
         dialog.getDialogPane().setContent(grid);
 
         ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType);
 
-        //Use regex to check for invalid input
+        // Get the reference to the "Save" button
+        Button saveButton = (Button) dialog.getDialogPane().lookupButton(saveButtonType);
+
+        saveButton.addEventFilter(ActionEvent.ACTION, event -> {
+            if ((lineNumberField.getText().isEmpty()) ||
+                    (!lineNumberField.getText().matches("\\d+") || !lineNumberField.getText().matches("\\d{10}")) ||
+                    Pattern.compile("[\\p{So}]").matcher(areaCodeField.getText()).find() ||
+                    !isValidEmail(emailListView.getItems())) {
+
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Error");
+
+                if (!lineNumberField.getText().matches("\\d{10}")) {
+                    alert.setHeaderText("Number Error");
+                    alert.setContentText("You must put in only numbers in the telephone field, and exactly 10 digits");
+                } else if (Pattern.compile("[\\p{So}]").matcher(areaCodeField.getText()).find()) {
+                    alert.setHeaderText("Invalid Character Error");
+                    alert.setContentText("You must not put invalid characters in area code");
+                } else {
+                    alert.setHeaderText("Email Address Error");
+                    alert.setContentText("The format of the email is incorrect");
+                }
+
+                alert.showAndWait();
+                event.consume();
+            }
+        });
+
+//Use regex to check for invalid input
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == saveButtonType) {
-                if (!(lineNumberField.getText().matches("\\d+"))) {
-                    Alert alert1 = new Alert(Alert.AlertType.INFORMATION);
-                    alert1.setTitle("Error");
-                    alert1.setHeaderText("Number Error");
-                    alert1.setContentText("You must put in only numbers in the telephone, line number, and area code field");
-                    alert1.showAndWait();
-                    return null;
-                }
-                for (String email : emailListView.getItems()) {
-                    if (!email.contains("@")) {
-                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                        alert.setTitle("Error");
-                        alert.setHeaderText("Email Address Error");
-                        alert.setContentText("The format of the email is incorrect (include a @)");
-                        alert.showAndWait();
-                        return null;
-                    }
-                }
                 contact.setName(nameField.getText());
                 contact.setAreaCode(areaCodeField.getText());
                 contact.setLineNumber(lineNumberField.getText());
@@ -301,5 +329,37 @@ public class Application extends javafx.application.Application {
 
         Optional<Contacts> result = dialog.showAndWait();
         return result.isPresent();
+
     }
+
+    //check if the email is valid with text@text format, return null if it's not and return the original string if it is.
+    public static boolean isValidEmail(List<String> emails) {
+        Pattern pattern = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+
+        for (String email : emails) {
+            Matcher matcher = pattern.matcher(email);
+            if (!matcher.matches() || hasEmoji(email)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    public static boolean hasEmoji(String source) {
+        for (int i = 0; i < source.length(); i++) {
+            Character.UnicodeBlock block = Character.UnicodeBlock.of(source.charAt(i));
+
+            if (block.equals(Character.UnicodeBlock.MISCELLANEOUS_SYMBOLS)
+                    || block.equals(Character.UnicodeBlock.EMOTICONS)
+                    || block.equals(Character.UnicodeBlock.TRANSPORT_AND_MAP_SYMBOLS)
+                    || block.equals(Character.UnicodeBlock.MISCELLANEOUS_SYMBOLS_AND_PICTOGRAPHS)
+                    || block.equals(Character.UnicodeBlock.SMALL_FORM_VARIANTS)
+                    || block.equals(Character.UnicodeBlock.DINGBATS)
+                    || block.equals(Character.UnicodeBlock.ENCLOSED_ALPHANUMERIC_SUPPLEMENT)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
 }
