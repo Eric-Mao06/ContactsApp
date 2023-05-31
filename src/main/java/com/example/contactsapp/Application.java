@@ -1,6 +1,5 @@
 package com.example.contactsapp;
 
-import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -10,13 +9,11 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
-
-import java.util.Collections;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javafx.event.ActionEvent;
-
+import java.util.*;
+import javafx.beans.property.*;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -103,7 +100,8 @@ public class Application extends javafx.application.Application {
             }
         });
 
-        contactsTable.getColumns().addAll(nameColumn, areaCodeColumn, lineNumberColumn, emailColumn, isMobileColumn);
+        contactsTable.getColumns().addAll(nameColumn, areaCodeColumn, lineNumberColumn, isMobileColumn);
+        addEmail(1,contactsTable);
         contactsTable.setItems(contactsData);
 
         // Set up buttons and their event handlers
@@ -270,7 +268,6 @@ public class Application extends javafx.application.Application {
                 }
             });
         });
-
         // Delete the selected email from the list
         Button deleteEmailButton = new Button("Delete Email");
         deleteEmailButton.setOnAction(e -> {
@@ -279,7 +276,6 @@ public class Application extends javafx.application.Application {
                 emailListView.getItems().remove(selectedEmail);
             }
         });
-
         CheckBox isMobileField = new CheckBox();
         isMobileField.setSelected(contact.getIsMobile());
 
@@ -340,6 +336,7 @@ public class Application extends javafx.application.Application {
                 contact.setLineNumber(lineNumberField.getText());
                 contact.setEmails(FXCollections.observableArrayList(emailListView.getItems()));
                 contact.setIsMobile(isMobileField.isSelected());
+                addEmail(emailListView.getItems().size(),contactsTable);
                 return contact;
             }
             return null;
@@ -385,5 +382,44 @@ public class Application extends javafx.application.Application {
             }
         }
         return false;
+    }
+
+    /**
+     * Add email columns to the table view
+     * @param numOfEmails
+     * @param contactsTable
+     */
+    public static void addEmail(int numOfEmails, TableView<Contacts> contactsTable) {
+        int maxEmails = (numOfEmails>=1?numOfEmails:1);
+        // Find the maximum number of emails among all contacts
+        for (Contacts contact : contactsTable.getItems()) {
+            int numEmails = contact.getEmails().size();
+            if (numEmails > maxEmails) {
+                maxEmails = numEmails;
+            }
+        }
+        // Remove existing email columns
+        List<TableColumn<Contacts, ?>> emailColumns = new ArrayList<>();
+        for (TableColumn<Contacts, ?> column : contactsTable.getColumns()) {
+            if (column.getText().toLowerCase().contains("email")) {
+                emailColumns.add(column);
+            }
+        }
+        contactsTable.getColumns().removeAll(emailColumns);
+        // Add new email columns based on the maximum number of emails
+        for (int i = 1; i <= maxEmails; i++) {
+            final int columnIndex = i;
+            TableColumn<Contacts, String> emailColumn = new TableColumn<>("Email " + columnIndex);
+            emailColumn.setCellValueFactory(cellData -> {
+                List<String> emails = cellData.getValue().getEmails();
+                if (columnIndex <= emails.size()) {
+                    return new SimpleStringProperty(emails.get(columnIndex - 1));
+                } else {
+                    return new SimpleStringProperty("");
+                }
+            });
+            contactsTable.getColumns().add(emailColumn);
+            emailColumn.setPrefWidth(200);
+        }
     }
 }
